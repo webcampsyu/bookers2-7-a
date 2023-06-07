@@ -9,7 +9,17 @@ class BooksController < ApplicationController
 
   def index
     @book = Book.new
-    @books = Book.all
+    
+    #いいね数を多い順に表示するための記述
+    to = Time.current.at_end_of_day #Time.currentはapplication.rbに設定してあるタイムゾーンを元に現在日時を取得
+    from = (to - 6.day).at_beginning_of_day 
+    @books = Book.includes(:favorited_users). #Book.allで全ての投稿データを取得していたが、毎回「誰が投稿したか」という情報をユーザテーブルに取りに行っている
+                                              #includesで関連するテーブルをまとめて取得する
+                                              #モデル.includes(引数)
+     sort_by {|x| #sort_byメソッドでいいね数の少ない順に取り出す
+                  #|x|を定義しないと2よりも10,11ノほうが小さいと判定されてしまう
+      x.favorited_users.includes(:favorites).where(created_at: from...to).size
+     }.reverse #sort_byメソッドで少ない順に取り出しているため、reverseで多い順に入れ替える
     @user = User.find(current_user.id)
     
   end
